@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}Inicio - Ferretería El Constructor{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+	<div class="col-12">
+		<div class="card informacion">
+			<div class="card-body">
+				<h2 class="card-title">Bienvenido a Ferretería El Constructor</h2>
+				<p class="card-text text-muted">El panel de administración muestra módulos para gestionar productos, clientes, proveedores y facturación.</p>
+			</div>
+		</div>
+	</div>
+
+	<div class="col-md-6 col-lg-3">
+		<div class="card modulo-card">
+			<div class="card-body text-center">
+				<div class="icono">🔧</div>
+				<h5>Productos</h5>
+				<p>Consulta los productos disponibles y su información.</p>
+				<a href="{{ url_for('productos') }}" class="btn btn-primary">Ver productos</a>
+			</div>
+		</div>
+	</div>
+
+	<div class="col-md-6 col-lg-3">
+		<div class="card modulo-card">
+			<div class="card-body text-center">
+				<div class="icono">👥</div>
+				<h5>Clientes</h5>
+				<p>Consulta la información de los clientes registrados.</p>
+				<a href="{{ url_for('clientes') }}" class="btn btn-primary">Ver clientes</a>
+			</div>
+		</div>
+	</div>
+
+	<div class="col-md-6 col-lg-3">
+		<div class="card modulo-card">
+			<div class="card-body text-center">
+				<div class="icono">🚚</div>
+				<h5>Proveedores</h5>
+				<p>Consulta la información de los proveedores.</p>
+				<a href="{{ url_for('proveedores') }}" class="btn btn-primary">Ver proveedores</a>
+			</div>
+		</div>
+	</div>
+
+	<div class="col-md-6 col-lg-3">
+		<div class="card modulo-card">
+			<div class="card-body text-center">
+				<div class="icono">🧾</div>
+				<h5>Facturación</h5>
+				<p>Revisa y administra las facturas del sistema.</p>
+				<a href="{{ url_for('facturacion') }}" class="btn btn-primary">Ver facturas</a>
+			</div>
+		</div>
+	</div>
+
+	<div class="col-12 mt-3">
+		<h4>Productos destacados</h4>
+		<div class="table-responsive">
+			<table class="table table-striped">
+				<thead>
+					<tr>
+						<th>Código</th>
+						<th>Nombre</th>
+						<th>Categoría</th>
+						<th>Precio</th>
+						<th>Stock</th>
+					</tr>
+				</thead>
+				<tbody>
+					{% for producto in productos %}
+					<tr>
+						<td>{{ producto.codigo }}</td>
+						<td>{{ producto.nombre }}</td>
+						<td>{{ producto.categoria }}</td>
+						<td>${{ "%.2f"|format(producto.precio) }}</td>
+						<td>{{ producto.stock }}</td>
+					</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</div>
+	</div>
+</div>
+{% endblock %}

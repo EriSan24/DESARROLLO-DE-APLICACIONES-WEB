@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}Productos - Ferretería El Constructor{% endblock %}
+
+{% block content %}
+<div class="informacion">
+	<h2>📦 Productos</h2>
+	<p class="text-muted">Listado de productos disponibles en la ferretería.</p>
+	<div class="table-responsive">
+		<table class="table table-hover table-bordered align-middle">
+			<thead class="table-dark">
+				<tr>
+					<th>Código</th>
+					<th>Nombre</th>
+					<th>Categoría</th>
+					<th>Precio</th>
+					<th>Stock</th>
+					<th>Estado</th>
+				</tr>
+			</thead>
+			<tbody>
+				{% for producto in productos %}
+				<tr>
+					<td>{{ producto.codigo }}</td>
+					<td>{{ producto.nombre }}</td>
+					<td>{{ producto.categoria }}</td>
+					<td>${{ "%.2f"|format(producto.precio) }}</td>
+					<td>{{ producto.stock }}</td>
+					<td>
+						{% if producto.stock > 10 %}
+							<span class="badge bg-success">Disponible</span>
+						{% elif producto.stock > 0 %}
+							<span class="badge bg-warning text-dark">Stock bajo</span>
+						{% else %}
+							<span class="badge bg-danger">Agotado</span>
+						{% endif %}
+					</td>
+				</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+	</div>
+</div>
+{% endblock %}

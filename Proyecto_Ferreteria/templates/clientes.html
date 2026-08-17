@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}Clientes - Ferretería El Constructor{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+	<div>
+		<h2>👥 Gestión de Clientes</h2>
+		<p class="text-muted">Clientes registrados en el sistema.</p>
+	</div>
+	<button class="btn btn-success" onclick="mostrarMensaje()">+ Nuevo cliente</button>
+</div>
+
+<div class="card shadow-sm informacion">
+	<div class="card-body">
+		<div class="table-responsive">
+			<table class="table table-hover table-bordered">
+				<thead class="table-dark">
+					<tr>
+						<th>ID</th>
+						<th>Nombre</th>
+						<th>Cédula</th>
+						<th>Teléfono</th>
+						<th>Correo</th>
+					</tr>
+				</thead>
+				<tbody>
+					{% for cliente in clientes %}
+					<tr>
+						<td>{{ cliente.id }}</td>
+						<td>{{ cliente.nombre }}</td>
+						<td>{{ cliente.cedula }}</td>
+						<td>{{ cliente.telefono }}</td>
+						<td>{{ cliente.correo }}</td>
+					</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</div>
+	</div>
+</div>
+
+{% endblock %}

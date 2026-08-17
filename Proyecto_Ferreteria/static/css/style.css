@@ -1,0 +1,62 @@
+* {
+	margin-bottom: 15px;
+}
+
+/* Información */
+.informacion {
+	background-color: #fff;
+	padding: 20px;
+	border-radius: 12px;
+	box-shadow: 0 3px 12px rgba(0, 0, 0, 0.06);
+}
+
+.informacion h2 {
+	margin-bottom: 12px;
+}
+
+/* Tablas */
+.table {
+	vertical-align: middle;
+}
+
+.table th {
+	white-space: nowrap;
+}
+
+/* Tarjetas de módulos */
+.card {
+	border-radius: 12px;
+}
+
+.modulo-card .icono {
+	font-size: 28px;
+	margin-bottom: 8px;
+}
+
+/* Pie de página */
+.footer-principal {
+	background-color: #212529;
+	color: white;
+	padding: 18px 0;
+	margin-top: 50px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+	.header-principal {
+		text-align: center;
+	}
+
+	.header-principal .text-md-end {
+		text-align: center !important;
+		margin-top: 15px;
+	}
+
+	.hero h2 {
+		font-size: 30px;
+	}
+
+	.hero p {
+		font-size: 17px;
+	}
+}
