@@ -7,8 +7,9 @@
 	<div class="col-12">
 		<div class="card informacion">
 			<div class="card-body">
-				<h2 class="card-title">Bienvenido a Ferretería El Constructor</h2>
-				<p class="card-text text-muted">El panel de administración muestra módulos para gestionar productos, clientes, proveedores y facturación.</p>
+				<h2 class="card-title">Bienvenido a {{ nombre_sistema|upper }}</h2>
+				<p class="card-text text-muted">{{ resumen.mensaje }}. Gestiona productos, clientes, proveedores y facturación desde un solo lugar.</p>
+				<span class="badge text-bg-primary">{{ resumen.modulos }} módulos disponibles</span>
 			</div>
 		</div>
 	</div>
@@ -71,6 +72,7 @@
 					</tr>
 				</thead>
 				<tbody>
+					{% if productos %}
 					{% for producto in productos %}
 					<tr>
 						<td>{{ producto.codigo }}</td>
@@ -80,6 +82,11 @@
 						<td>{{ producto.stock }}</td>
 					</tr>
 					{% endfor %}
+					{% else %}
+					<tr>
+						<td colspan="5" class="text-center text-muted">No hay productos destacados.</td>
+					</tr>
+					{% endif %}
 				</tbody>
 			</table>
 		</div>
