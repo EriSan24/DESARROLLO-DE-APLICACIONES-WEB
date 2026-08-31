@@ -33,6 +33,22 @@
 	margin-bottom: 8px;
 }
 
+/* Formularios */
+.form-label {
+	font-weight: 600;
+}
+
+.invalid-feedback {
+	display: block;
+	margin-top: 0.35rem;
+	font-size: 0.875rem;
+}
+
+.form-control.is-invalid,
+.form-select.is-invalid {
+	border-color: #dc3545;
+}
+
 /* Pie de página */
 .footer-principal {
 	background-color: #212529;
