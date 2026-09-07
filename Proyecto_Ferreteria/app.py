@@ -1,3 +1,6 @@
+import sqlite3
+from pathlib import Path
+
 from flask import Flask, flash, redirect, render_template, url_for
 
 from forms import ClienteForm, FacturaForm, ProductoForm, ProveedorForm
@@ -5,14 +8,16 @@ from forms import ClienteForm, FacturaForm, ProductoForm, ProveedorForm
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "ferreteria_secret_key_2026"
 
-NOMBRE_SISTEMA = "Ferretería El Constructor"
+DATABASE_PATH = Path(app.root_path) / "data" / "ferreteria.db"
+
+NOMBRE_SISTEMA = "Erick Ferretech"
 
 RESUMEN_SISTEMA = {
     "modulos": 4,
     "mensaje": "Panel de administración activo",
 }
 
-PRODUCTOS = [
+PRODUCTOS_INICIALES = [
     {"codigo": "P001", "nombre": "Martillo", "categoria": "Herramientas", "precio": 12.50, "stock": 25},
     {"codigo": "P002", "nombre": "Clavo 3in", "categoria": "Ferretería", "precio": 0.05, "stock": 200},
     {"codigo": "P003", "nombre": "Taladro", "categoria": "Eléctricas", "precio": 85.00, "stock": 5},
@@ -38,9 +43,53 @@ FACTURAS = [
 ]
 
 
+def get_database_connection():
+    return sqlite3.connect(DATABASE_PATH)
+
+
+def initialize_database():
+    DATABASE_PATH.parent.mkdir(exist_ok=True)
+    conn = get_database_connection()
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS productos (
+            codigo TEXT PRIMARY KEY,
+            nombre TEXT NOT NULL,
+            categoria TEXT NOT NULL,
+            precio REAL NOT NULL,
+            stock INTEGER NOT NULL
+        )
+        """
+    )
+    conn.executemany(
+        """
+        INSERT OR IGNORE INTO productos (codigo, nombre, categoria, precio, stock)
+        VALUES (?, ?, ?, ?, ?)
+        """,
+        [
+            (producto["codigo"], producto["nombre"], producto["categoria"], producto["precio"], producto["stock"])
+            for producto in PRODUCTOS_INICIALES
+        ],
+    )
+    conn.commit()
+    conn.close()
+
+
+def get_products():
+    conn = get_database_connection()
+    products = conn.execute(
+        "SELECT codigo, nombre, categoria, precio, stock FROM productos ORDER BY codigo"
+    ).fetchall()
+    conn.close()
+    return [dict(zip(("codigo", "nombre", "categoria", "precio", "stock"), product)) for product in products]
+
+
+initialize_database()
+
+
 @app.route("/")
 def index():
-    productos_destacados = PRODUCTOS[:3]
+    productos_destacados = get_products()[:3]
     return render_template(
         "index.html",
         productos=productos_destacados,
@@ -51,22 +100,29 @@ def index():
 
 @app.route("/productos")
 def productos():
-    return render_template("productos.html", productos=PRODUCTOS, nombre_sistema=NOMBRE_SISTEMA)
+    return render_template("productos.html", productos=get_products(), nombre_sistema=NOMBRE_SISTEMA)
 
 
 @app.route("/productos/formulario", methods=["GET", "POST"])
 def formulario_producto():
     form = ProductoForm()
     if form.validate_on_submit():
-        PRODUCTOS.append(
-            {
-                "codigo": form.codigo.data.strip(),
-                "nombre": form.nombre.data.strip(),
-                "categoria": form.categoria.data.strip(),
-                "precio": float(form.precio.data),
-                "stock": int(form.stock.data),
-            }
+        conn = get_database_connection()
+        conn.execute(
+            """
+            INSERT INTO productos (codigo, nombre, categoria, precio, stock)
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            (
+                form.codigo.data.strip(),
+                form.nombre.data.strip(),
+                form.categoria.data.strip(),
+                float(form.precio.data),
+                int(form.stock.data),
+            ),
         )
+        conn.commit()
+        conn.close()
         flash("Producto registrado correctamente.", "success")
         return redirect(url_for("productos"))
     return render_template("formulario_producto.html", form=form, nombre_sistema=NOMBRE_SISTEMA)
