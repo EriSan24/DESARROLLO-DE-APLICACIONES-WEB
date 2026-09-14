@@ -3,5 +3,5 @@ function mostrarMensaje() {
 }
 
 document.addEventListener("DOMContentLoaded", function () {
-	console.log("Sistema de Ferretería El Constructor iniciado correctamente.");
+	console.log("Sistema de Ferretería Erick iniciado correctamente.");
 });

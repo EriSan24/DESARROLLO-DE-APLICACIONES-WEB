@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 
-{% block title %}Formulario de Producto - Ferretería El Constructor{% endblock %}
+{% block title %}Formulario de Producto - Ferretería Erick{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-lg-8">
         <div class="card shadow-sm informacion">
             <div class="card-body">
-                <h2 class="mb-4">🧰 Registrar producto</h2>
+                <h2 class="mb-4">{% if editar %}✏️ Editar producto{% else %}🧰 Registrar producto{% endif %}</h2>
 
                 {% with messages = get_flashed_messages(with_categories=true) %}
                     {% if messages %}
@@ -70,7 +70,7 @@
 
                     <div class="d-flex justify-content-between align-items-center">
                         <a href="{{ url_for('productos') }}" class="btn btn-outline-secondary">Cancelar</a>
-                        <button type="submit" class="btn btn-primary">Guardar producto</button>
+                        <button type="submit" class="btn btn-primary">{% if editar %}Guardar cambios{% else %}Guardar producto{% endif %}</button>
                     </div>
                 </form>
             </div>

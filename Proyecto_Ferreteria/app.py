@@ -1,88 +1,42 @@
-import sqlite3
-from pathlib import Path
+from flask import Flask, flash, redirect, render_template, request, url_for
 
-from flask import Flask, flash, redirect, render_template, url_for
-
+from conexion import (
+    delete_product,
+    get_product_by_code,
+    get_products,
+    initialize_database,
+    insert_product,
+    update_product,
+)
 from forms import ClienteForm, FacturaForm, ProductoForm, ProveedorForm
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "ferreteria_secret_key_2026"
 
-DATABASE_PATH = Path(app.root_path) / "data" / "ferreteria.db"
-
-NOMBRE_SISTEMA = "Erick Ferretech"
+NOMBRE_SISTEMA = "Ferretería Erick"
 
 RESUMEN_SISTEMA = {
     "modulos": 4,
-    "mensaje": "Panel de administración activo",
+    "mensaje": "Panel de administración de la ferretería activo",
 }
 
-PRODUCTOS_INICIALES = [
-    {"codigo": "P001", "nombre": "Martillo", "categoria": "Herramientas", "precio": 12.50, "stock": 25},
-    {"codigo": "P002", "nombre": "Clavo 3in", "categoria": "Ferretería", "precio": 0.05, "stock": 200},
-    {"codigo": "P003", "nombre": "Taladro", "categoria": "Eléctricas", "precio": 85.00, "stock": 5},
-    {"codigo": "P004", "nombre": "Sierra", "categoria": "Herramientas", "precio": 45.00, "stock": 0},
-]
-
 CLIENTES = [
-    {"id": "C001", "nombre": "erick Sanchez", "cedula": "2100000001", "telefono": "0999999999", "correo": "juan@gmail.com"},
-    {"id": "C002", "nombre": "estefania ramon", "cedula": "2100000002", "telefono": "0988888888", "correo": "maria@gmail.com"},
-    {"id": "C003", "nombre": "roberto mecias", "cedula": "2100000003", "telefono": "0977777777", "correo": "carlos@gmail.com"},
+    {"id": "C001", "nombre": "Erick Sánchez", "cedula": "2100000001", "telefono": "0999999999", "correo": "erick.sanchez@gmail.com"},
+    {"id": "C002", "nombre": "Estefanía Ramón", "cedula": "2100000002", "telefono": "0988888888", "correo": "estefania.ramon@gmail.com"},
+    {"id": "C003", "nombre": "Roberto Mena", "cedula": "2100000003", "telefono": "0977777777", "correo": "roberto.mena@gmail.com"},
 ]
 
 PROVEEDORES = [
-    {"id": "PR001", "empresa": "FerreImport S.A.", "contacto": "Luis Torres", "telefono": "0991111111", "correo": "ventas@ferreimport.com"},
-    {"id": "PR002", "empresa": "Distribuidora Amazónica", "contacto": "Ana Morales", "telefono": "0982222222", "correo": "info@distribuidora.com"},
-    {"id": "PR003", "empresa": "Herramientas del Ecuador", "contacto": "Pedro Gómez", "telefono": "0973333333", "correo": "contacto@herramientas.com"},
+    {"id": "PR001", "empresa": "FerreMax S.A.", "contacto": "Luis Torres", "telefono": "0991111111", "correo": "ventas@ferremax.com"},
+    {"id": "PR002", "empresa": "Distribuidora Norte", "contacto": "Ana Morales", "telefono": "0982222222", "correo": "info@distribuidoranorte.com"},
+    {"id": "PR003", "empresa": "Herramientas del Sur", "contacto": "Pedro Gómez", "telefono": "0973333333", "correo": "contacto@herramientassur.com"},
 ]
 
 FACTURAS = [
-    {"numero": "FAC-001", "cliente": "Juan Pérez", "fecha": "15/08/2026", "total": 125.50, "estado": "Pagada"},
-    {"numero": "FAC-002", "cliente": "María López", "fecha": "15/08/2026", "total": 85.00, "estado": "Pagada"},
-    {"numero": "FAC-003", "cliente": "Carlos Sánchez", "fecha": "16/08/2026", "total": 45.75, "estado": "Pendiente"},
+    {"numero": "FAC-001", "cliente": "Erick Sánchez", "fecha": "15/08/2026", "total": 125.50, "estado": "Pagada"},
+    {"numero": "FAC-002", "cliente": "Estefanía Ramón", "fecha": "15/08/2026", "total": 85.00, "estado": "Pagada"},
+    {"numero": "FAC-003", "cliente": "Roberto Mena", "fecha": "16/08/2026", "total": 45.75, "estado": "Pendiente"},
 ]
-
-
-def get_database_connection():
-    return sqlite3.connect(DATABASE_PATH)
-
-
-def initialize_database():
-    DATABASE_PATH.parent.mkdir(exist_ok=True)
-    conn = get_database_connection()
-    conn.execute(
-        """
-        CREATE TABLE IF NOT EXISTS productos (
-            codigo TEXT PRIMARY KEY,
-            nombre TEXT NOT NULL,
-            categoria TEXT NOT NULL,
-            precio REAL NOT NULL,
-            stock INTEGER NOT NULL
-        )
-        """
-    )
-    conn.executemany(
-        """
-        INSERT OR IGNORE INTO productos (codigo, nombre, categoria, precio, stock)
-        VALUES (?, ?, ?, ?, ?)
-        """,
-        [
-            (producto["codigo"], producto["nombre"], producto["categoria"], producto["precio"], producto["stock"])
-            for producto in PRODUCTOS_INICIALES
-        ],
-    )
-    conn.commit()
-    conn.close()
-
-
-def get_products():
-    conn = get_database_connection()
-    products = conn.execute(
-        "SELECT codigo, nombre, categoria, precio, stock FROM productos ORDER BY codigo"
-    ).fetchall()
-    conn.close()
-    return [dict(zip(("codigo", "nombre", "categoria", "precio", "stock"), product)) for product in products]
-
 
 initialize_database()
 
@@ -107,25 +61,58 @@ def productos():
 def formulario_producto():
     form = ProductoForm()
     if form.validate_on_submit():
-        conn = get_database_connection()
-        conn.execute(
-            """
-            INSERT INTO productos (codigo, nombre, categoria, precio, stock)
-            VALUES (?, ?, ?, ?, ?)
-            """,
-            (
-                form.codigo.data.strip(),
-                form.nombre.data.strip(),
-                form.categoria.data.strip(),
-                float(form.precio.data),
-                int(form.stock.data),
-            ),
-        )
-        conn.commit()
-        conn.close()
-        flash("Producto registrado correctamente.", "success")
+        producto = {
+            "codigo": form.codigo.data.strip(),
+            "nombre": form.nombre.data.strip(),
+            "categoria": form.categoria.data.strip(),
+            "precio": float(form.precio.data),
+            "stock": int(form.stock.data),
+        }
+        if insert_product(producto):
+            flash("Producto registrado correctamente.", "success")
+            return redirect(url_for("productos"))
+        flash("No se pudo registrar el producto. Verifique el código o la conexión.", "danger")
+    return render_template("formulario_producto.html", form=form, nombre_sistema=NOMBRE_SISTEMA, editar=False)
+
+
+@app.route("/productos/editar/<codigo>", methods=["GET", "POST"])
+def editar_producto(codigo):
+    producto = get_product_by_code(codigo)
+    if not producto:
+        flash("Producto no encontrado.", "danger")
         return redirect(url_for("productos"))
-    return render_template("formulario_producto.html", form=form, nombre_sistema=NOMBRE_SISTEMA)
+
+    form = ProductoForm()
+    if request.method == "GET":
+        form.codigo.data = producto["codigo"]
+        form.nombre.data = producto["nombre"]
+        form.categoria.data = producto["categoria"]
+        form.precio.data = producto["precio"]
+        form.stock.data = producto["stock"]
+
+    if form.validate_on_submit():
+        codigo_actual = producto["codigo"]
+        codigo_nuevo = form.codigo.data.strip()
+        nombre = form.nombre.data.strip()
+        categoria = form.categoria.data.strip()
+        precio = float(form.precio.data)
+        stock = int(form.stock.data)
+
+        if update_product(codigo_actual, codigo_nuevo, nombre, categoria, precio, stock):
+            flash("Producto actualizado correctamente.", "success")
+            return redirect(url_for("productos"))
+        flash("No se pudo actualizar el producto.", "danger")
+
+    return render_template("formulario_producto.html", form=form, nombre_sistema=NOMBRE_SISTEMA, editar=True, codigo=codigo)
+
+
+@app.route("/productos/eliminar/<codigo>", methods=["POST"])
+def eliminar_producto(codigo):
+    if delete_product(codigo):
+        flash("Producto eliminado correctamente.", "success")
+    else:
+        flash("No se pudo eliminar el producto.", "danger")
+    return redirect(url_for("productos"))
 
 
 @app.route("/clientes")
