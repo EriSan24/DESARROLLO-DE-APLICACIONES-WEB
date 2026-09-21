@@ -2,6 +2,8 @@ import os
 import sqlite3
 from pathlib import Path
 
+from werkzeug.security import generate_password_hash
+
 try:
     import mysql.connector
 except ImportError:  # pragma: no cover - optional dependency
@@ -18,9 +20,15 @@ SCHEMA_PATH = BASE_DIR / "sql" / "esquema.sql"
 
 PRODUCTOS_INICIALES = [
     {"codigo": "P001", "nombre": "Martillo", "categoria": "Herramientas", "precio": 12.50, "stock": 25, "id_proveedor": 1},
-    {"codigo": "P002", "nombre": "Clavo 3in", "categoria": "Ferretería", "precio": 0.05, "stock": 200, "id_proveedor": 2},
     {"codigo": "P003", "nombre": "Taladro", "categoria": "Eléctricas", "precio": 85.00, "stock": 5, "id_proveedor": 3},
     {"codigo": "P004", "nombre": "Sierra", "categoria": "Herramientas", "precio": 45.00, "stock": 0, "id_proveedor": 1},
+    {"codigo": "P005", "nombre": "Moladora", "categoria": "Herramientas", "precio": 120.00, "stock": 8, "id_proveedor": 1},
+    {"codigo": "P006", "nombre": "Metro", "categoria": "Medición", "precio": 18.50, "stock": 30, "id_proveedor": 2},
+    {"codigo": "P007", "nombre": "Mangueras", "categoria": "Fontanería", "precio": 15.00, "stock": 40, "id_proveedor": 2},
+    {"codigo": "P008", "nombre": "Hierro", "categoria": "Construcción", "precio": 22.00, "stock": 60, "id_proveedor": 3},
+    {"codigo": "P009", "nombre": "Barrillas", "categoria": "Construcción", "precio": 30.50, "stock": 35, "id_proveedor": 3},
+    {"codigo": "P010", "nombre": "Llave inglesa", "categoria": "Herramientas", "precio": 28.00, "stock": 12, "id_proveedor": 1},
+    {"codigo": "P011", "nombre": "Taladro inalámbrico", "categoria": "Eléctricas", "precio": 95.00, "stock": 7, "id_proveedor": 3},
 ]
 
 PROVEEDORES_INICIALES = [
@@ -28,6 +36,8 @@ PROVEEDORES_INICIALES = [
     {"id_proveedor": 2, "nombre": "Distribuidora Norte", "telefono": "0982222222", "correo": "info@distribuidoranorte.com"},
     {"id_proveedor": 3, "nombre": "Herramientas del Sur", "telefono": "0973333333", "correo": "contacto@herramientassur.com"},
 ]
+
+USUARIO_DEMO = {"usuario": "Ericksanchez", "password": "Erick2000"}
 
 
 def _split_sql_statements(sql_script):
@@ -98,7 +108,25 @@ def get_db_connection():
     return _sqlite_connection()
 
 
+def _ensure_sqlite_product_supplier_column(conn):
+    columns = conn.execute("PRAGMA table_info(productos)").fetchall()
+    has_supplier_column = any(column[1] == "id_proveedor" for column in columns)
+    if not has_supplier_column:
+        conn.execute("ALTER TABLE productos ADD COLUMN id_proveedor INTEGER")
+        conn.execute("UPDATE productos SET id_proveedor = 1 WHERE id_proveedor IS NULL")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_productos_id_proveedor ON productos(id_proveedor)")
+
+
 def _initialize_sqlite_database(conn):
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS usuarios (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            usuario TEXT NOT NULL UNIQUE,
+            password TEXT NOT NULL
+        )
+        """
+    )
     conn.execute(
         """
         CREATE TABLE IF NOT EXISTS proveedores (
@@ -133,6 +161,7 @@ def _initialize_sqlite_database(conn):
         )
         """
     )
+    _ensure_sqlite_product_supplier_column(conn)
     conn.execute(
         """
         CREATE TABLE IF NOT EXISTS facturas (
@@ -159,6 +188,10 @@ def _initialize_sqlite_database(conn):
             ),
         )
 
+    product_codes = tuple(producto["codigo"] for producto in PRODUCTOS_INICIALES)
+    placeholders = ", ".join("?" for _ in product_codes)
+    conn.execute(f"DELETE FROM productos WHERE codigo NOT IN ({placeholders})", product_codes)
+
     for producto in PRODUCTOS_INICIALES:
         conn.execute(
             """
@@ -174,6 +207,11 @@ def _initialize_sqlite_database(conn):
                 producto["id_proveedor"],
             ),
         )
+
+    conn.execute(
+        "INSERT OR IGNORE INTO usuarios (usuario, password) VALUES (?, ?)",
+        (USUARIO_DEMO["usuario"], generate_password_hash(USUARIO_DEMO["password"])),
+    )
 
     conn.commit()
 
@@ -201,11 +239,63 @@ def initialize_database():
     except (sqlite3.Error, OSError):
         if conn is not None:
             conn.close()
+        if DATABASE_PATH.exists():
+            try:
+                DATABASE_PATH.unlink()
+            except OSError:
+                pass
         conn = _sqlite_connection()
         _initialize_sqlite_database(conn)
     finally:
         if conn:
             conn.close()
+
+
+def get_user_by_username(usuario):
+    conn = get_db_connection()
+    try:
+        cursor = conn.cursor()
+        query = "SELECT id, usuario, password FROM usuarios WHERE usuario = %s"
+        cursor.execute(*_parameterized_sql(query, (usuario,)))
+        row = cursor.fetchone()
+        if row is None:
+            return None
+        if hasattr(row, "keys"):
+            return dict(row)
+        return {"id": row[0], "usuario": row[1], "password": row[2]}
+    finally:
+        conn.close()
+
+
+def get_user_by_id(user_id):
+    conn = get_db_connection()
+    try:
+        cursor = conn.cursor()
+        query = "SELECT id, usuario, password FROM usuarios WHERE id = %s"
+        cursor.execute(*_parameterized_sql(query, (user_id,)))
+        row = cursor.fetchone()
+        if row is None:
+            return None
+        if hasattr(row, "keys"):
+            return dict(row)
+        return {"id": row[0], "usuario": row[1], "password": row[2]}
+    finally:
+        conn.close()
+
+
+def create_user(usuario, password_hash):
+    conn = get_db_connection()
+    try:
+        cursor = conn.cursor()
+        query = "INSERT INTO usuarios (usuario, password) VALUES (%s, %s)"
+        cursor.execute(*_parameterized_sql(query, (usuario, password_hash)))
+        conn.commit()
+        return True
+    except (sqlite3.Error, OSError):
+        conn.rollback()
+        return False
+    finally:
+        conn.close()
 
 
 def _normalize_product_row(row):

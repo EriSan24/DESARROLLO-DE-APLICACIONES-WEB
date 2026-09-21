@@ -1,17 +1,37 @@
 from flask import Flask, flash, redirect, render_template, request, url_for
+from flask_login import LoginManager, current_user, login_required, login_user, logout_user
+from werkzeug.security import check_password_hash, generate_password_hash
 
 from conexion import (
+    create_user,
     delete_product,
     get_product_by_code,
     get_products,
+    get_user_by_id,
+    get_user_by_username,
     initialize_database,
     insert_product,
     update_product,
 )
-from forms import ClienteForm, FacturaForm, ProductoForm, ProveedorForm
+from forms import ClienteForm, FacturaForm, LoginForm, ProductoForm, ProveedorForm, UsuarioForm
+from models import Usuario
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "ferreteria_secret_key_2026"
+
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = "login"
+login_manager.login_message = "Debe iniciar sesión para acceder a esta página."
+
+
+@login_manager.user_loader
+def load_user(user_id):
+    user_data = get_user_by_id(user_id)
+    if user_data:
+        return Usuario(user_data["id"], user_data["usuario"], user_data["password"])
+    return None
+
 
 NOMBRE_SISTEMA = "Ferretería Erick"
 
@@ -41,6 +61,54 @@ FACTURAS = [
 initialize_database()
 
 
+@app.route("/registro", methods=["GET", "POST"])
+def registro():
+    if current_user.is_authenticated:
+        return redirect(url_for("index"))
+
+    form = UsuarioForm()
+    if form.validate_on_submit():
+        username = form.usuario.data.strip()
+        if get_user_by_username(username):
+            flash("El nombre de usuario ya existe. Intente con otro.", "danger")
+        else:
+            password_hash = generate_password_hash(form.password.data)
+            if create_user(username, password_hash):
+                flash("Usuario registrado correctamente. Ahora puede iniciar sesión.", "success")
+                return redirect(url_for("login"))
+            flash("No se pudo registrar el usuario. Inténtelo nuevamente.", "danger")
+    return render_template("registro.html", form=form, nombre_sistema=NOMBRE_SISTEMA)
+
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if current_user.is_authenticated:
+        return redirect(url_for("index"))
+
+    form = LoginForm()
+    if form.validate_on_submit():
+        username = form.usuario.data.strip()
+        password = form.password.data
+        user_data = get_user_by_username(username)
+
+        if user_data and check_password_hash(user_data["password"], password):
+            user = Usuario(user_data["id"], user_data["usuario"], user_data["password"])
+            login_user(user)
+            flash(f"Bienvenido, {user.usuario}.", "success")
+            return redirect(url_for("index"))
+
+        flash("Credenciales incorrectas. Verifique su usuario y contraseña.", "danger")
+    return render_template("login.html", form=form, nombre_sistema=NOMBRE_SISTEMA)
+
+
+@app.route("/logout")
+@login_required
+def logout():
+    logout_user()
+    flash("Sesión cerrada correctamente.", "success")
+    return redirect(url_for("login"))
+
+
 @app.route("/")
 def index():
     productos_destacados = get_products()[:3]
@@ -53,11 +121,13 @@ def index():
 
 
 @app.route("/productos")
+@login_required
 def productos():
     return render_template("productos.html", productos=get_products(), nombre_sistema=NOMBRE_SISTEMA)
 
 
 @app.route("/productos/formulario", methods=["GET", "POST"])
+@login_required
 def formulario_producto():
     form = ProductoForm()
     if form.validate_on_submit():
@@ -76,6 +146,7 @@ def formulario_producto():
 
 
 @app.route("/productos/editar/<codigo>", methods=["GET", "POST"])
+@login_required
 def editar_producto(codigo):
     producto = get_product_by_code(codigo)
     if not producto:
@@ -107,6 +178,7 @@ def editar_producto(codigo):
 
 
 @app.route("/productos/eliminar/<codigo>", methods=["POST"])
+@login_required
 def eliminar_producto(codigo):
     if delete_product(codigo):
         flash("Producto eliminado correctamente.", "success")
@@ -116,11 +188,13 @@ def eliminar_producto(codigo):
 
 
 @app.route("/clientes")
+@login_required
 def clientes():
     return render_template("clientes.html", clientes=CLIENTES, nombre_sistema=NOMBRE_SISTEMA)
 
 
 @app.route("/clientes/formulario", methods=["GET", "POST"])
+@login_required
 def formulario_cliente():
     form = ClienteForm()
     if form.validate_on_submit():
@@ -139,11 +213,13 @@ def formulario_cliente():
 
 
 @app.route("/proveedores")
+@login_required
 def proveedores():
     return render_template("proveedores.html", proveedores=PROVEEDORES, nombre_sistema=NOMBRE_SISTEMA)
 
 
 @app.route("/proveedores/formulario", methods=["GET", "POST"])
+@login_required
 def formulario_proveedor():
     form = ProveedorForm()
     if form.validate_on_submit():
@@ -162,11 +238,13 @@ def formulario_proveedor():
 
 
 @app.route("/facturacion")
+@login_required
 def facturacion():
     return render_template("facturacion.html", facturas=FACTURAS, nombre_sistema=NOMBRE_SISTEMA)
 
 
 @app.route("/facturacion/formulario", methods=["GET", "POST"])
+@login_required
 def formulario_facturacion():
     form = FacturaForm()
     if form.validate_on_submit():

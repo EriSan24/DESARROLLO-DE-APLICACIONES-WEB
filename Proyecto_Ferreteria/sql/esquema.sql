@@ -1,3 +1,9 @@
+CREATE TABLE IF NOT EXISTS usuarios (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    usuario VARCHAR(50) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS proveedores (
     id_proveedor INT AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(100) NOT NULL,
@@ -39,7 +45,13 @@ ON DUPLICATE KEY UPDATE nombre = VALUES(nombre);
 
 INSERT INTO productos (codigo, nombre, categoria, precio, stock, id_proveedor) VALUES
 ('P001', 'Martillo', 'Herramientas', 12.50, 25, 1),
-('P002', 'Clavo 3in', 'Ferretería', 0.05, 200, 2),
 ('P003', 'Taladro', 'Eléctricas', 85.00, 5, 3),
-('P004', 'Sierra', 'Herramientas', 45.00, 0, 1)
+('P004', 'Sierra', 'Herramientas', 45.00, 0, 1),
+('P005', 'Moladora', 'Herramientas', 120.00, 8, 1),
+('P006', 'Metro', 'Medición', 18.50, 30, 2),
+('P007', 'Mangueras', 'Fontanería', 15.00, 40, 2),
+('P008', 'Hierro', 'Construcción', 22.00, 60, 3),
+('P009', 'Barrillas', 'Construcción', 30.50, 35, 3),
+('P010', 'Llave inglesa', 'Herramientas', 28.00, 12, 1),
+('P011', 'Taladro inalámbrico', 'Eléctricas', 95.00, 7, 3)
 ON DUPLICATE KEY UPDATE nombre = VALUES(nombre), categoria = VALUES(categoria), precio = VALUES(precio), stock = VALUES(stock), id_proveedor = VALUES(id_proveedor);
