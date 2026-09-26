@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}Marca y taller - {{ nombre_sistema }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow-sm informacion">
+            <div class="card-body">
+                <h2 class="mb-4">🚚 {% if editar %}Editar proveedor{% else %}Registrar proveedor{% endif %}</h2>
+
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <form method="POST" novalidate>
+                    {{ form.hidden_tag() }}
+
+                    <div class="mb-3">
+                        {{ form.empresa.label(class="form-label") }}
+                        {{ form.empresa(class="form-control" + (" is-invalid" if form.empresa.errors else ""), placeholder="Nombre de la empresa") }}
+                        {% if form.empresa.errors %}
+                            <div class="invalid-feedback d-block">{{ form.empresa.errors[0] }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.contacto.label(class="form-label") }}
+                        {{ form.contacto(class="form-control" + (" is-invalid" if form.contacto.errors else ""), placeholder="Nombre del contacto") }}
+                        {% if form.contacto.errors %}
+                            <div class="invalid-feedback d-block">{{ form.contacto.errors[0] }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.telefono.label(class="form-label") }}
+                                {{ form.telefono(class="form-control" + (" is-invalid" if form.telefono.errors else ""), placeholder="0999999999") }}
+                                {% if form.telefono.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.telefono.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.correo.label(class="form-label") }}
+                                {{ form.correo(class="form-control" + (" is-invalid" if form.correo.errors else ""), placeholder="correo@empresa.com") }}
+                                {% if form.correo.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.correo.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center">
+                        <a href="{{ url_for('proveedores') }}" class="btn btn-outline-secondary">Cancelar</a>
+                        <button type="submit" class="btn btn-primary">{% if editar %}Guardar cambios{% else %}Guardar proveedor{% endif %}</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

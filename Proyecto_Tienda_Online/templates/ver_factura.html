@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block title %}{{ factura.numero }} - {{ nombre_sistema }}{% endblock %}
+
+{% block content %}
+<article class="invoice-paper">
+	<div class="invoice-paper-head">
+		<div><p class="eyebrow">COMPROBANTE DE VENTA</p><h1>{{ nombre_sistema }}</h1><span>Prendas con historia · Marcas con carácter</span></div>
+		<div class="invoice-number"><span>FACTURA</span><strong>{{ factura.numero }}</strong><span>{{ factura.fecha }}</span></div>
+	</div>
+	<div class="invoice-customer"><div><span>CLIENTE</span><strong>{{ factura.cliente }}</strong></div><div><span>ESTADO</span><strong>{{ factura.estado }}</strong></div></div>
+	<div class="table-responsive border-0">
+		<table class="table mb-0"><thead><tr><th>Prenda</th><th>Marca</th><th>Talla / color</th><th>Cant.</th><th>Unitario</th><th>Importe</th></tr></thead>
+		<tbody>{% for line in lineas %}<tr><td>{{ line.prenda }}</td><td>{{ line.marca }}</td><td>{{ line.talla }} · {{ line.color }}</td><td>{{ line.cantidad }}</td><td>${{ "%.2f"|format(line.precio_unitario) }}</td><td>${{ "%.2f"|format(line.subtotal) }}</td></tr>{% else %}<tr><td colspan="6" class="text-muted">Comprobante histórico sin detalle de prendas.</td></tr>{% endfor %}</tbody></table>
+	</div>
+	<div class="invoice-totals">
+		<div><span>Subtotal</span><strong>${{ "%.2f"|format(factura.subtotal) }}</strong></div>
+		<div><span>Descuento ({{ "%.1f"|format(factura.descuento_pct) }}%)</span><strong>-${{ "%.2f"|format(factura.descuento) }}</strong></div>
+		<div><span>IVA (15%)</span><strong>${{ "%.2f"|format(factura.impuesto) }}</strong></div>
+		<div class="total"><span>Total</span><strong>${{ "%.2f"|format(factura.total) }}</strong></div>
+	</div>
+	<p class="invoice-thanks">Gracias por elegir piezas hechas para acompañarte por años.</p>
+</article>
+<div class="d-flex justify-content-between mt-4 no-print"><a href="{{ url_for('facturacion') }}" class="btn btn-outline-secondary">Volver a ventas</a><button type="button" class="btn btn-primary" onclick="window.print()">Imprimir factura</button></div>
+{% endblock %}

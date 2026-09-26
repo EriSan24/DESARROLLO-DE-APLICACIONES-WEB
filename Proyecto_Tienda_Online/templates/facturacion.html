@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}Punto de venta - {{ nombre_sistema }}{% endblock %}
+
+{% block content %}
+{% set pagadas = facturas | selectattr('estado', 'equalto', 'Pagada') | list %}
+{% set pendientes = facturas | selectattr('estado', 'equalto', 'Pendiente') | list %}
+<div class="d-flex justify-content-between align-items-end flex-wrap gap-3 mb-4">
+	<div><p class="eyebrow">LIBRO DE VENTAS</p><h2 class="page-title">Facturación</h2><p class="text-muted mb-0">Comprobantes, pagos y devoluciones de inventario.</p></div>
+	<a href="{{ url_for('formulario_facturacion') }}" class="btn btn-primary">+ Nueva venta</a>
+</div>
+
+<div class="row g-3 mb-4">
+	<div class="col-md-4"><div class="card p-3"><span class="eyebrow">COMPROBANTES EN VISTA</span><strong class="metric-number">{{ facturas|length }}</strong></div></div>
+	<div class="col-md-4"><div class="card p-3"><span class="eyebrow">VENTAS PAGADAS</span><strong class="metric-number">${{ "%.2f"|format(pagadas|sum(attribute='total')) }}</strong></div></div>
+	<div class="col-md-4"><div class="card p-3"><span class="eyebrow">PENDIENTE DE COBRO</span><strong class="metric-number">${{ "%.2f"|format(pendientes|sum(attribute='total')) }}</strong></div></div>
+</div>
+
+<form class="invoice-filters" method="GET">
+	<div><label class="form-label" for="q">Buscar</label><input class="form-control" id="q" name="q" value="{{ termino }}" placeholder="Número o cliente"></div>
+	<div><label class="form-label" for="estado">Estado</label><select class="form-select" id="estado" name="estado"><option value="">Todos</option><option value="Pendiente" {% if filtro_estado == 'Pendiente' %}selected{% endif %}>Pendiente</option><option value="Pagada" {% if filtro_estado == 'Pagada' %}selected{% endif %}>Pagada</option><option value="Anulada" {% if filtro_estado == 'Anulada' %}selected{% endif %}>Anulada</option></select></div>
+	<button class="btn btn-outline-primary" type="submit">Aplicar</button>
+	<a class="btn btn-outline-secondary" href="{{ url_for('facturacion') }}">Limpiar</a>
+</form>
+
+<div class="informacion p-0 overflow-hidden">
+	<div class="table-responsive border-0">
+		<table class="table table-hover mb-0">
+			<thead><tr><th>Comprobante</th><th>Cliente</th><th>Fecha</th><th>Subtotal</th><th>IVA</th><th>Total</th><th>Estado</th><th>Acciones</th></tr></thead>
+			<tbody>
+			{% for f in facturas %}
+			<tr>
+				<td class="fw-semibold">{{ f.numero }}</td><td>{{ f.cliente }}</td><td>{{ f.fecha }}</td>
+				<td>${{ "%.2f"|format(f.subtotal) }}</td><td>${{ "%.2f"|format(f.impuesto) }}</td><td class="fw-semibold">${{ "%.2f"|format(f.total) }}</td>
+				<td><span class="badge {% if f.estado == 'Pagada' %}text-bg-success{% elif f.estado == 'Anulada' %}text-bg-secondary{% else %}text-bg-warning{% endif %}">{{ f.estado }}</span></td>
+				<td><div class="d-flex flex-wrap gap-1">
+					<a href="{{ url_for('ver_factura', invoice_id=f.id_factura) }}" class="btn btn-sm btn-outline-primary">Ver</a>
+					{% if f.estado != 'Anulada' %}<a href="{{ url_for('editar_factura', invoice_id=f.id_factura) }}" class="btn btn-sm btn-primary">Editar</a>
+					<form action="{{ url_for('eliminar_factura', invoice_id=f.id_factura) }}" method="POST" onsubmit="return confirm('¿Anular esta venta y devolver las prendas al inventario?');"><button type="submit" class="btn btn-sm btn-outline-danger">Anular</button></form>{% endif %}
+				</div></td>
+			</tr>
+			{% else %}<tr><td colspan="8" class="text-center text-muted py-4">No hay comprobantes para estos filtros.</td></tr>{% endfor %}
+			</tbody>
+		</table>
+	</div>
+</div>
+{% endblock %}

@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block title %}{% if editar %}Editar venta{% else %}Nueva venta{% endif %} - {{ nombre_sistema }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="card informacion">
+            <div class="card-body">
+                <p class="eyebrow">PUNTO DE VENTA</p>
+                <h2 class="page-title mb-4">{% if editar %}Editar comprobante{% else %}Nueva factura{% endif %}</h2>
+                <form method="POST" novalidate id="invoice-form">
+                    {{ form.hidden_tag() }}
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            {{ form.numero.label(class="form-label") }}
+                            {{ form.numero(class="form-control" + (" is-invalid" if form.numero.errors else ""), placeholder="MH-0001") }}
+                            {% if form.numero.errors %}<div class="invalid-feedback">{{ form.numero.errors[0] }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            {{ form.id_cliente.label(class="form-label") }}
+                            {{ form.id_cliente(class="form-select" + (" is-invalid" if form.id_cliente.errors else "")) }}
+                            {% if form.id_cliente.errors %}<div class="invalid-feedback">{{ form.id_cliente.errors[0] }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            {{ form.fecha.label(class="form-label") }}
+                            {{ form.fecha(class="form-control" + (" is-invalid" if form.fecha.errors else "")) }}
+                            {% if form.fecha.errors %}<div class="invalid-feedback">{{ form.fecha.errors[0] }}</div>{% endif %}
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-end gap-3 flex-wrap mb-3">
+                        <div><p class="eyebrow">DETALLE DE COMPRA</p><h3 class="h5 mb-0">Prendas</h3></div>
+                        <button type="button" class="btn btn-outline-primary btn-sm" id="add-invoice-line">+ Agregar prenda</button>
+                    </div>
+                    <div class="invoice-lines" id="invoice-lines" data-tax-rate="0.15">
+                        {% set invoice_lines = lineas if lineas else [none] %}
+                        {% for line in invoice_lines %}
+                        <div class="invoice-line">
+                            <div>
+                                <label class="form-label">Prenda</label>
+                                <select class="form-select line-product" name="codigo_producto" required>
+                                    <option value="">Seleccionar prenda</option>
+                                    {% for product in productos %}
+                                    <option value="{{ product.codigo }}" data-price="{{ product.precio }}" data-stock="{{ product.stock + line.cantidad if line and line.codigo_producto == product.codigo else product.stock }}" {% if line and line.codigo_producto == product.codigo %}selected{% endif %}>
+                                        {{ product.marca }} · {{ product.nombre }} · T. {{ product.talla }} · {{ product.color }} · ${{ "%.2f"|format(product.precio) }} ({{ product.stock }} disp.)
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div>
+                                <label class="form-label">Cantidad</label>
+                                <input class="form-control line-quantity" type="number" name="cantidad" min="1" max="{{ line.stock + line.cantidad if line else 9999 }}" value="{{ line.cantidad if line else 1 }}" required>
+                            </div>
+                            <button type="button" class="btn btn-outline-danger remove-invoice-line" aria-label="Quitar prenda" title="Quitar prenda">×</button>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <template id="invoice-line-template">
+                        <div class="invoice-line">
+                            <div>
+                                <label class="form-label">Prenda</label>
+                                <select class="form-select line-product" name="codigo_producto" required>
+                                    <option value="">Seleccionar prenda</option>
+                                    {% for product in productos %}
+                                    <option value="{{ product.codigo }}" data-price="{{ product.precio }}" data-stock="{{ product.stock }}">
+                                        {{ product.marca }} · {{ product.nombre }} · T. {{ product.talla }} · {{ product.color }} · ${{ "%.2f"|format(product.precio) }} ({{ product.stock }} disp.)
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div>
+                                <label class="form-label">Cantidad</label>
+                                <input class="form-control line-quantity" type="number" name="cantidad" min="1" value="1" required>
+                            </div>
+                            <button type="button" class="btn btn-outline-danger remove-invoice-line" aria-label="Quitar prenda" title="Quitar prenda">×</button>
+                        </div>
+                    </template>
+
+                    <div class="invoice-summary" id="invoice-summary">
+                        <div><span>Subtotal</span><strong id="invoice-subtotal">$0.00</strong></div>
+                        <div class="align-items-center"><span>Descuento</span><div class="d-flex align-items-center gap-2 mb-0">{{ form.descuento_pct(class="form-control form-control-sm", min="0", max="100", step="0.5", style="width: 92px") }}<span>%</span></div></div>
+                        {% if form.descuento_pct.errors %}<div class="text-danger">{{ form.descuento_pct.errors[0] }}</div>{% endif %}
+                        <div><span>Descuento aplicado</span><strong id="invoice-discount">$0.00</strong></div>
+                        <div><span>IVA (15%)</span><strong id="invoice-tax">$0.00</strong></div>
+                        <div class="total"><span>Total</span><strong id="invoice-total">$0.00</strong></div>
+                    </div>
+
+                    <div class="row"><div class="col-md-4 mb-3">{{ form.estado.label(class="form-label") }}{{ form.estado(class="form-select") }}</div></div>
+                    <div class="d-flex justify-content-between align-items-center mt-4">
+                        <a href="{{ url_for('facturacion') }}" class="btn btn-outline-secondary">Cancelar</a>
+                        <button type="submit" class="btn btn-primary">{% if editar %}Guardar cambios{% else %}Emitir factura{% endif %}</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

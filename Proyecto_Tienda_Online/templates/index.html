@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}Inicio - {{ nombre_sistema }}{% endblock %}
+
+{% block content %}
+<section class="boutique-hero">
+	<div class="boutique-hero-copy">
+		<p class="eyebrow">HECHO PARA LLEVARSE AÑOS</p>
+		<h2>Vestir bien.<br><em>Elegir mejor.</em></h2>
+		<p>{{ resumen.mensaje }}. Denim, básicos y piezas icónicas para todos los días.</p>
+		<a href="{{ url_for('productos') }}" class="btn btn-primary">Explorar colección <span aria-hidden="true">→</span></a>
+	</div>
+	<div class="boutique-hero-image" role="img" aria-label="Selección de prendas de ropa en una boutique"></div>
+	<div class="hero-stamp">SELECCIÓN<br>DE TEMPORADA</div>
+</section>
+
+<section class="collection-section">
+	<div class="section-heading">
+		<div><p class="eyebrow">SELECCIÓN DE LA CASA</p><h2>Piezas para quedarse</h2></div>
+		<a href="{{ url_for('productos') }}" class="text-link">Ver toda la colección ↗</a>
+	</div>
+	<div class="row g-4">
+		{% for producto in productos %}
+		<div class="col-6 col-lg-3">
+			<article class="garment-tile">
+				<img src="{{ producto.imagen }}" alt="{{ producto.nombre }} de {{ producto.marca }}" loading="lazy">
+				<div class="garment-info"><span>{{ producto.marca }} · {{ producto.categoria }}</span><h3>{{ producto.nombre }}</h3><div class="garment-meta"><span>Talla {{ producto.talla }}</span><strong>${{ "%.2f"|format(producto.precio) }}</strong></div></div>
+			</article>
+		</div>
+		{% else %}<p class="text-muted">Aún no hay piezas en la colección.</p>{% endfor %}
+	</div>
+</section>
+
+<section class="atelier-strip">
+	<div><p class="eyebrow">ATENCIÓN DE CASA</p><h2>Una compra sencilla,<br>una factura clara.</h2></div>
+	<a href="{{ url_for('facturacion') }}" class="btn btn-outline-light">{% if current_user.is_authenticated %}Ir a facturación{% else %}Acceso de equipo{% endif %}</a>
+</section>
+{% endblock %}
