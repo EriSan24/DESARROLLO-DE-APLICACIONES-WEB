@@ -90,8 +90,6 @@ def _postgres_connection():
         options = {}
         if host not in {"localhost", "127.0.0.1", "::1"}:
             options["sslmode"] = os.getenv("DB_SSLMODE", "require")
-        conn = psycopg2.connect(database_url, **options)
-    else:
         conn = psycopg2.connect(
             host=os.getenv("DB_HOST", "localhost"),
             port=int(os.getenv("DB_PORT", "5432")),
@@ -853,3 +851,6 @@ def delete_invoice(invoice_id):
         return False
     finally:
         conn.close()
+
+
+

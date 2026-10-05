@@ -37,6 +37,7 @@ from models import Usuario
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "ferreteria_secret_key_2026")
+app.config["WTF_CSRF_ENABLED"] = False
 
 login_manager = LoginManager()
 login_manager.init_app(app)
